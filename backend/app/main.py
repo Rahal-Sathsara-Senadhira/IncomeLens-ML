@@ -23,10 +23,10 @@ app.add_middleware(
 @app.get("/health", response_model=HealthResponse)
 def health():
     return HealthResponse(
-        status="ok",
-        model_loaded=bundle.loaded,
-        model_name=bundle.model_name if bundle.loaded else None,
-    )
+    status="ok",
+    loaded=bundle.loaded,
+    model=bundle.model_name if bundle.loaded else None,
+)
 
 
 @app.get("/schema", response_model=SchemaResponse)

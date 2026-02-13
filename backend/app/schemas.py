@@ -3,17 +3,6 @@ from pydantic import BaseModel, Field
 
 
 class PredictRequest(BaseModel):
-    """
-    Send features as a JSON object. Example:
-    {
-      "features": {
-        "age": 37,
-        "workclass": "Private",
-        "education": "Bachelors",
-        ...
-      }
-    }
-    """
     features: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -22,14 +11,14 @@ class PredictResponse(BaseModel):
     probability: Optional[float] = None
     threshold: float
     positive_label: str
-    model_name: str
-    top_factors: Optional[list[dict]] = None  # [{feature, weight}] or [{feature, importance}]
+    model: str
+    top_factors: Optional[list[dict]] = None
 
 
 class HealthResponse(BaseModel):
     status: str
-    model_loaded: bool
-    model_name: Optional[str] = None
+    loaded: bool
+    model: Optional[str] = None
 
 
 class SchemaResponse(BaseModel):

@@ -1,3 +1,4 @@
+#ml.py
 from __future__ import annotations
 
 import json
@@ -64,7 +65,9 @@ class ModelBundle:
 
     def predict(self, features: Dict[str, Any]) -> dict[str, Any]:
         if not self.loaded or self.pipeline is None:
-            raise RuntimeError("Model is not loaded. Train first and ensure artifacts exist.")
+            raise RuntimeError(
+                "Model is not loaded. Train first and ensure artifacts exist."
+            )
 
         X = self._row_to_dataframe(features)
 
@@ -83,12 +86,12 @@ class ModelBundle:
 
         label = self.label_mapping.get(str(pred_int), str(pred_int))
 
-        result: dict[str, Any] = {
+        result = {
             "label": label,
             "probability": proba,
             "threshold": self.threshold,
             "positive_label": self.positive_label,
-            "model_name": self.model_name,
+            "model": self.model_name,
         }
 
         # Add lightweight "explanations" if we saved them in metadata
