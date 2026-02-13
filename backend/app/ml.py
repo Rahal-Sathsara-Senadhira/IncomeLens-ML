@@ -1,4 +1,3 @@
-#ml.py
 from __future__ import annotations
 
 import json
@@ -6,9 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import joblib
-import numpy as np
 import pandas as pd
-
 
 ARTIFACT_DIR = Path(__file__).resolve().parent.parent / "artifacts"
 MODEL_PATH = ARTIFACT_DIR / "model.joblib"
@@ -55,30 +52,20 @@ class ModelBundle:
         return self.meta.get("label_mapping", {"0": "<=50K", "1": ">50K"})
 
     def _row_to_dataframe(self, features: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Build a 1-row DataFrame that matches the training columns.
-        Any missing expected feature becomes None.
-        Extra keys are ignored.
-        """
         row = {col: features.get(col, None) for col in self.expected_features}
         return pd.DataFrame([row], columns=self.expected_features)
 
     def predict(self, features: Dict[str, Any]) -> dict[str, Any]:
         if not self.loaded or self.pipeline is None:
-            raise RuntimeError(
-                "Model is not loaded. Train first and ensure artifacts exist."
-            )
+            raise RuntimeError("Model is not loaded. Train first and ensure artifacts exist.")
 
         X = self._row_to_dataframe(features)
 
-        # Predict proba if supported (LogReg, RF support it)
         proba: Optional[float] = None
         if hasattr(self.pipeline, "predict_proba"):
             p = self.pipeline.predict_proba(X)
-            # Positive class assumed to be class "1"
             proba = float(p[0, 1])
 
-        # Default prediction
         if proba is not None:
             pred_int = 1 if proba >= self.threshold else 0
         else:
@@ -94,10 +81,8 @@ class ModelBundle:
             "model": self.model_name,
         }
 
-        # Add lightweight "explanations" if we saved them in metadata
         top_factors = self.meta.get("top_factors")
         if isinstance(top_factors, list) and len(top_factors) > 0:
-            # Only return up to 8 to keep UI clean
             result["top_factors"] = top_factors[:8]
         else:
             result["top_factors"] = None

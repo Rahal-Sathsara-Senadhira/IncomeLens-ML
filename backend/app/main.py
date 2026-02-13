@@ -10,10 +10,9 @@ app = FastAPI(
     description="Predict income class (<=50K vs >50K) from census-like attributes.",
 )
 
-# Allow your future frontend to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # in production: set your Vercel URL
+    allow_origins=["*"],  # for production: set exact frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,10 +22,10 @@ app.add_middleware(
 @app.get("/health", response_model=HealthResponse)
 def health():
     return HealthResponse(
-    status="ok",
-    loaded=bundle.loaded,
-    model=bundle.model_name if bundle.loaded else None,
-)
+        status="ok",
+        loaded=bundle.loaded,
+        model=bundle.model_name if bundle.loaded else None,
+    )
 
 
 @app.get("/schema", response_model=SchemaResponse)
