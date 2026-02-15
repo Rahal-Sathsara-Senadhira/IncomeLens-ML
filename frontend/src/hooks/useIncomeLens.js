@@ -3,6 +3,25 @@ import { getHealth, getSchema, predict } from "../api/incomeApi";
 import { guessInputType } from "../utils/heuristics";
 import { normalizeValue } from "../utils/formatters";
 
+const HISTORY_KEY = "incomeLens.history.v1";
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+  } catch {
+    // ignore
+  }
+}
+
 export function useIncomeLens() {
   const [health, setHealth] = useState(null);
   const [schema, setSchema] = useState(null);
@@ -12,6 +31,8 @@ export function useIncomeLens() {
   const [loadingSchema, setLoadingSchema] = useState(false);
   const [loadingPredict, setLoadingPredict] = useState(false);
   const [error, setError] = useState("");
+
+  const [history, setHistory] = useState(() => loadHistory());
 
   // load health + schema
   useEffect(() => {
@@ -58,7 +79,6 @@ export function useIncomeLens() {
   }
 
   function fillExample() {
-    // Works for both dot and dash naming styles
     const sample = { ...form };
     const candidates = {
       age: 37,
@@ -95,12 +115,26 @@ export function useIncomeLens() {
 
     try {
       setLoadingPredict(true);
+
       const featuresObj = {};
       for (const f of fields) {
         featuresObj[f.name] = normalizeValue(f.type, form[f.name]);
       }
+
       const out = await predict(featuresObj);
       setResult(out);
+
+      // Save history (local)
+      const item = {
+        t: Date.now(),
+        label: out?.label ?? "—",
+        probability: Number(out?.probability ?? 0),
+        model: out?.model ?? health?.model ?? "Model",
+      };
+
+      const next = [item, ...history].slice(0, 20);
+      setHistory(next);
+      saveHistory(next);
     } catch (err) {
       const msg =
         err?.response?.data?.detail ||
@@ -112,9 +146,14 @@ export function useIncomeLens() {
     }
   }
 
+  function clearHistory() {
+    setHistory([]);
+    saveHistory([]);
+  }
+
   const apiOnline = !!health;
-  const modelLoaded = !!health?.loaded;
-  const modelName = health?.model || "—";
+  const modelLoaded = !!(health?.model_loaded ?? health?.loaded ?? true);
+  const modelName = health?.model_name || health?.model || "—";
 
   return {
     health,
@@ -132,5 +171,8 @@ export function useIncomeLens() {
     fillExample,
     clear,
     submit,
+
+    history,
+    clearHistory,
   };
 }

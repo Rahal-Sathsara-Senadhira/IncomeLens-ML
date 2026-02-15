@@ -21,6 +21,8 @@ export default function App() {
     fillExample,
     clear,
     submit,
+    history,
+    clearHistory,
   } = useIncomeLens();
 
   function onSubmit(e) {
@@ -30,8 +32,8 @@ export default function App() {
 
   return (
     <div className="page">
-      <header className="header">
-        <div>
+      <header className="topbar">
+        <div className="brand">
           <h1>IncomeLens ML</h1>
           <p className="sub">Full-stack ML demo — React UI + FastAPI model inference</p>
         </div>
@@ -42,8 +44,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid">
-        <section className="card">
+      <main className="dashboard">
+        {/* LEFT: FORM */}
+        <section className="card formCard">
           <div className="cardHead">
             <h2>Input Features</h2>
             <div className="actions">
@@ -56,49 +59,58 @@ export default function App() {
             </div>
           </div>
 
-          {loadingSchema && <p>Loading schema…</p>}
+          {loadingSchema && <p className="hint">Loading schema…</p>}
 
           {!loadingSchema && schema && (
             <>
               <p className="hint">
-                Form fields are auto-generated from <code>/schema</code>. You can leave some fields empty.
+                Fields are auto-generated from <code>/schema</code>. You can leave some fields empty.
               </p>
 
               <form onSubmit={onSubmit} className="form">
-                <div className="formGrid">
-                  {fields.map((f) => (
-                    <FieldInput
-                      key={f.name}
-                      name={f.name}
-                      type={f.type}
-                      value={form[f.name]}
-                      onChange={setField}
-                    />
-                  ))}
+                <div className="formScroll">
+                  <div className="formGrid">
+                    {fields.map((f) => (
+                      <FieldInput
+                        key={f.name}
+                        name={f.name}
+                        type={f.type}
+                        value={form[f.name]}
+                        onChange={setField}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <button type="submit" className="btn primary" disabled={loadingPredict}>
                   {loadingPredict ? "Predicting…" : "Predict"}
                 </button>
+
+                <div className="footerMini">
+                  Backend: <code>{API_BASE}</code>
+                </div>
               </form>
             </>
           )}
 
           {!schema && !loadingSchema && (
-            <p className="error">
+            <div className="errorBox">
               Could not load schema. Make sure backend is running at <code>{API_BASE}</code>.
-            </p>
+            </div>
           )}
         </section>
 
-        <ResultPanel modelName={modelName} error={error} result={result} />
+        {/* RIGHT: RESULTS */}
+        <div className="rightStack">
+          <ResultPanel
+            modelName={modelName}
+            error={error}
+            result={result}
+            history={history}
+            onClearHistory={clearHistory}
+          />
+        </div>
       </main>
-
-      <footer className="footer">
-        <span>
-          Backend: <code>{API_BASE}</code>
-        </span>
-      </footer>
     </div>
   );
 }

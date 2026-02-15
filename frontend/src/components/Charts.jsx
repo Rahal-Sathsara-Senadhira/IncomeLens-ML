@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 
 function clamp01(x) {
@@ -20,32 +22,19 @@ export function ProbabilityBar({ probability }) {
   const pct = (p * 100).toFixed(1);
 
   return (
-    <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>Confidence</span>
-        <span style={{ fontWeight: 700 }}>{pct}%</span>
+    <div className="probWrap">
+      <div className="probTop">
+        <span className="muted">Confidence</span>
+        <span className="strong">{pct}%</span>
       </div>
 
-      <div
-        style={{
-          height: 12,
-          borderRadius: 999,
-          border: "1px solid var(--line)",
-          background: "rgba(255,255,255,0.04)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${p * 100}%`,
-            background: "linear-gradient(90deg, var(--primary), var(--primary2))",
-          }}
-        />
+      <div className="probTrack">
+        <div className="probFill" style={{ width: `${p * 100}%` }} />
       </div>
 
-      <div style={{ marginTop: 8, color: "var(--muted)", fontSize: 12 }}>
-        0% <span style={{ float: "right" }}>100%</span>
+      <div className="probAxis">
+        <span>0%</span>
+        <span>100%</span>
       </div>
     </div>
   );
@@ -54,27 +43,93 @@ export function ProbabilityBar({ probability }) {
 export function TopFactorsChart({ top_factors }) {
   if (!Array.isArray(top_factors) || top_factors.length === 0) return null;
 
-  // Normalize to { name, value }
   const data = top_factors.slice(0, 8).map((x) => ({
     name: x.feature,
     value: Number(x.importance ?? x.weight ?? 0),
   }));
 
   return (
-    <div style={{ marginTop: 14 }}>
-      <div style={{ color: "var(--muted)", fontSize: 12, marginBottom: 8 }}>
-        Feature influence (Top 8)
-      </div>
-
-      <div style={{ width: "100%", height: 260 }}>
+    <div className="chartBox">
+      <div className="chartTitle">Feature influence (Top 8)</div>
+      <div className="chartCanvas">
         <ResponsiveContainer>
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="name" width={170} />
-            <Tooltip />
-            <Bar dataKey="value" />
+            <defs>
+              <linearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgba(110,168,254,0.95)" />
+                <stop offset="100%" stopColor="rgba(155,123,255,0.95)" />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid stroke="rgba(255,255,255,0.10)" strokeDasharray="3 3" />
+            <XAxis type="number" tick={{ fill: "rgba(232,240,255,0.70)" }} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={190}
+              tick={{ fill: "rgba(232,240,255,0.70)" }}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "rgba(10,14,22,0.92)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 12,
+                color: "rgba(232,240,255,0.95)",
+              }}
+            />
+            <Bar dataKey="value" fill="url(#barGrad)" radius={[8, 8, 8, 8]} />
           </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function HistoryLineChart({ history }) {
+  if (!Array.isArray(history) || history.length === 0) return null;
+
+  const data = [...history]
+    .slice(0, 12)
+    .reverse()
+    .map((h) => ({
+      time: new Date(h.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      p: Number(h.probability ?? 0),
+      label: h.label,
+    }));
+
+  return (
+    <div className="chartBox">
+      <div className="chartTitle">Prediction history (last 12)</div>
+      <div className="chartCanvas">
+        <ResponsiveContainer>
+          <LineChart data={data} margin={{ left: 10, right: 10 }}>
+            <defs>
+              <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgba(110,168,254,0.95)" />
+                <stop offset="100%" stopColor="rgba(155,123,255,0.95)" />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid stroke="rgba(255,255,255,0.10)" strokeDasharray="3 3" />
+            <XAxis dataKey="time" tick={{ fill: "rgba(232,240,255,0.70)" }} />
+            <YAxis domain={[0, 1]} tick={{ fill: "rgba(232,240,255,0.70)" }} />
+            <Tooltip
+              formatter={(v) => `${(Number(v) * 100).toFixed(1)}%`}
+              contentStyle={{
+                background: "rgba(10,14,22,0.92)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 12,
+                color: "rgba(232,240,255,0.95)",
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="p"
+              stroke="url(#lineGrad)"
+              strokeWidth={3}
+              dot={{ r: 3 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
